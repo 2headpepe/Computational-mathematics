@@ -159,17 +159,16 @@ def luSolve2(A,b):
     if(abs(det(A))>eps*norm(A)):
         return luSolve(A,b)
     
-    #Ly=Pb, y =U*inv(Q)x
+    #Lz=Pb, z =U*inv(Q)x
     n=A.shape[0]
     Pb=np.dot(P,b)
-    y=np.zeros((n,1))
+    z=np.zeros((n,1))
     for i in range(n):
         a=Pb[i]
-        v=np.dot(L[i,:i],y[:i])
-        y[i]=Pb[i]-np.dot(L[i,:i],y[:i])
-    #y=U*inv(Q)*x
-    U=U@luInverse(Q)
-    x=np.zeros((n,1))
+        v=np.dot(L[i,:i],z[:i])
+        z[i]=Pb[i]-np.dot(L[i,:i],z[:i])
+    #z=U*y, y = inv(Q)x
+    y=np.zeros((n,1))
     numOfVariables=n
     for i in range(n-1,-1,-1):
         if(abs(U[i][i])<eps*norm(U)):
@@ -178,8 +177,10 @@ def luSolve2(A,b):
             else:
                 numOfVariables-=1
         else:
-            tmp = np.dot(U[i,i+1:(numOfVariables)],x[i+1:(numOfVariables)])
-            x[i]=(y[i]-np.dot(U[i,i+1:],x[i+1:]))/U[i][i]
+            # tmp = np.dot(U[i,i+1:(numOfVariables)],x[i+1:(numOfVariables)])
+            y[i]=(z[i]-np.dot(U[i,i+1:],y[i+1:]))/U[i][i]
+    # y = inv(Q)x
+    x=Q@y
     return x
 
 n=5
