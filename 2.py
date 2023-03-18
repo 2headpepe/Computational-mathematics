@@ -3,6 +3,42 @@ import numpy as np
 
 eps = 10e-14
 
+def luMatrix(A):
+    n=A.shape[0]
+    L = np.identity(n)
+    U = A.copy().astype(float)
+    P = np.identity(n)
+    Q = np.identity(n)
+    difP,difQ=0,0
+    for k in range(n):
+        pivot_index = np.argmax(np.abs(U[k:, k:]))
+        i = pivot_index//(n-k)+k
+        j = pivot_index%(n-k)+k
+        if(k!=i):
+            difP+=1
+        if(k!=j):
+            difQ+=1
+
+    # Swap rows and columns in matrices U and P
+        U[[k, i], :] = U[[i, k], :]
+        U[:, [k, j]] = U[:, [j, k]]
+        P[[k, i], :] = P[[i, k], :]
+        Q[:, [k, j]] = Q[:, [j, k]]
+
+    # Compute the multipliers and update the matrices L and U
+        L[k+1:,k]=U[k+1:,k]/U[k,k]
+        U[k+1:,k:]-=np.outer(L[k+1:,k],U[k,k:])
+        U[k+1:,k]=L[k+1:,k]
+        
+        
+# Extract the diagonal and upper triangle of U
+    L=np.tril(U)
+    for i in range(n):
+        L[i,i]=1
+    U = np.triu(U)
+    return P,L,U,Q,difP,difQ
+
+
 def luColumn(A):
     n = A.shape[0]
     L = np.eye(n)
@@ -118,12 +154,12 @@ def rank(A):
     return resultRank
             
 def luSolve2(A,b):
-    P,L,U,dif = luColumn(A)
-    detA=det(A)
+    #Ax=b=>L*U*inv(Q)x=Pb
+    P,L,U,Q,_,_ = luMatrix(A)
     if(abs(det(A))>eps*norm(A)):
         return luSolve(A,b)
     
-    #Ly=Pb
+    #Ly=Pb, y =U*inv(Q)x
     n=A.shape[0]
     Pb=np.dot(P,b)
     y=np.zeros((n,1))
@@ -131,7 +167,8 @@ def luSolve2(A,b):
         a=Pb[i]
         v=np.dot(L[i,:i],y[:i])
         y[i]=Pb[i]-np.dot(L[i,:i],y[:i])
-    #y=Ux
+    #y=U*inv(Q)*x
+    U=U@luInverse(Q)
     x=np.zeros((n,1))
     numOfVariables=n
     for i in range(n-1,-1,-1):
@@ -156,7 +193,8 @@ A[:,2]=A[:,1]+A[:,0]
 A[:,3]=A[:,1]-A[:,0]
 
 b = np.dot(A, b)
-P,L,U,_=luColumn(A)
+# A=np.array([[0,2,3],[4,5,6],[7,8,9]])
+P,L,U,Q,_,_=luMatrix(A)
 print("A:\n")
 print(A,"\n\n")
 print("L:\n")
@@ -165,8 +203,10 @@ print("U:\n")
 print(U,'\n\n')
 print("P:\n")
 print(P,'\n\n')
-print("LU-PA:\n")
-print(L@U-P@A,'\n\n')
+print("Q:\n")
+print(Q,'\n\n')
+print("LU-PAQ:\n")
+print(L@U-P@A@Q,'\n\n')
 
 
 
