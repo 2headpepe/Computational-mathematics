@@ -122,14 +122,14 @@ def luInverse(A):
 def inverseAccuracy(A):
     print(A@luInverse(A),"\t: A*A^(-1)")
     print(luInverse(A)@A,"\t: A^(-1)*A")
-def norm(A):
-    n=A.shape[0]#поменять норму на бесконечность
-    result=0
-    for i in range(n):
-        for j in range(n):
-            result+=A[i][j]**2
-    result=sqrt(result)
-    return result
+# def norm(A):
+#     n=A.shape[0]#поменять норму на бесконечность
+#     result=0
+#     for i in range(n):
+#         for j in range(n):
+#             result+=A[i][j]**2
+#     result=sqrt(result)
+#     return result
 
 def luCond(A):
     return norm(A)*norm(luInverse(A))
@@ -183,88 +183,254 @@ def luSolve2(A,b):
     x=Q@y
     return x
 
+
+
+
+
+
+
+
+
+
+#2.3 QR
+
+
+
+
+
+
+
+def QR_dec(A):
+    N = A.shape[0]
+    Q = np.eye(N)
+    R = A.copy()
+    for iter in range(N):
+        y = np.zeros((N,1))
+        for i in range(iter, N):
+            y[i][0] = R[i][iter]
+
+        norm_y = np.linalg.norm(y)
+        sign = np.sign(R[iter, iter])
+        norm_y *= sign
+
+        e = np.zeros((N, 1))
+        e[iter][0] = norm_y
+
+        w = y + e
+        k = np.linalg.norm(w)**2
+        mulp = np.dot(w, w.T)
+        mulp[iter:, iter:] /= (k * 0.5)
+
+        H = np.eye(N)
+        H -= mulp
+        R = np.dot(H, R)
+        Q = np.dot(Q, H)
+
+    print('Q Q^t = \n', np.dot(Q, np.transpose(Q)))
+    print('Q^t Q = \n', np.dot(Q.T, Q))
+    print('QR = \n', np.dot(Q, R))
+    print('A = \n', A)
+    return Q, R
+
+
+def SLAE(Q, R, b):
+    N = Q.shape[0]
+    Qtb = Q.T @ b
+    x = np.zeros((N,1))
+
+    for i in range(N-1, -1, -1):
+        x[i, 0] = Qtb[i, 0]
+        for j in range(N-1, i, -1):
+            x[i, 0] -= x[j, 0] * R[i, j]
+        x[i, 0] /= R[i, i]
+
+    print("Ax =\n", np.dot(A,x))
+    print("b = \n", b)
+
 n=5
 # A=np.random.randint(10,size=(n,n))
-# A = np.array([[-2,5,1,3],[5, 4, 5,18],[1, 3, 2,7],[8,-9,1,5]])
+A = np.array([[-2,5,1,3],[5, 4, 5,18],[1, 3, 2,7],[8,-9,1,5]])
 #A = np.array([[1,3,2],[4,6,5],[7,9,8]])
 
-b=np.random.randint(10,size=(n,1))
-A=np.random.rand(n,n)
-A[:,2]=A[:,1]+A[:,0]
-A[:,3]=A[:,1]-A[:,0]
+b=np.random.randint(10,size=(4,1))
+# A=np.random.rand(n,n)
+# A[:,2]=A[:,1]+A[:,0]
+# A[:,3]=A[:,1]-A[:,0]
 
-b = np.dot(A, b)
-# A=np.array([[0,2,3],[4,5,6],[7,8,9]])
-P,L,U,Q,_,_=luMatrix(A)
-print("A:\n")
-print(A,"\n\n")
-print("L:\n")
-print(L,'\n\n')
-print("U:\n")
-print(U,'\n\n')
-print("P:\n")
-print(P,'\n\n')
-print("Q:\n")
-print(Q,'\n\n')
-print("LU-PAQ:\n")
-print(L@U-P@A@Q,'\n\n')
+# b = np.dot(A, b)
+
+N = 4
+MIN = -10
+MAX = 10
+
+# define A matrix
+A_int = np.random.randint(MIN, MAX+1, size=(N,N))
+A = A_int.astype(np.float64)
+# A = np.array([[3., -2., 5.], [7., 4., -8.], [5., -3., -4.]])
+# Compute the QR decomposition of A using NumPy's qr function
+Q_np, R_np = np.linalg.qr(A)
 
 
+# Compute the QR decomposition of A using your QR_dec function
+Q, R = QR_dec(A)
+print("Q's")
+print('Q\n',Q, '\n', 'Q_Numpy\n', Q_np, '\n')
+print("R's")
+print('R\n',R, '\n', 'R_Numpy\n', R_np, '\n')
 
 
+# b = np.array([[7.], [3.], [-12.]])
+b_int = np.random.randint(MIN, MAX+1, size=(N,1))
+b = b_int.astype(np.float64)
+print("b matrix:\n", b, "\n")
 
-
-
-
-#2 rank
-print("Rank:\t",rank(A),"\n\n")
-x=luSolve2(A,b)
-print("Solve result: \n")
-print(x,"\n\n")
-
-if x is not None:
-    print("Ax-b: \n\n")
-    print(A@x-b,"\n\n")
+SLAE(Q, R, b)
 
 
 
 
 
 
+#2.4
 
 
-# #0. LU column
-# P, L, U,dif = luColumn(A)
 
-# print(P,"\t:P\n")
-# print(L,"\t:L\n")
-# print(U,"\t:U\n")
-# print(P@A,"\t:P*A\n")
-# print(L@U,"\t:L*U\n")
-# print(dif,"\t:dif\n")
-# print(norm(dif),"\t:norm\n\n")
 
-# #a. Determinant
 
-# print("Determinant\n")
-# print(det(A),"\n\n")
+def equal(A, B, err):
+    return np.allclose(A, B, atol=err)
 
-# #b. Solve Ax=b
-# print("Solve\n")
-# x=luSolve(A,b)
-# if (x is None):
-#     print("none")
-# else:
-#     print(x,"\n")
-#     print(solveAccuracy(A,b),"\n\n")
 
-# #c. Inv
-# print("Inverse\n")
-# if(det(A)!=0):
-#     print(luInverse(A),"\n")
-#     inverseAccuracy(A)
-#     print("\n\n")
+def norm(A):
+    res = np.linalg.norm(A, ord=np.inf)
+    if res < 0:
+        return -res
+    else:
+        return res
 
-# #d. Cond
-# print("Condition\n")
-# print(luCond(A),"\n\n")
+
+def diag_dom(A):
+    return np.all(2 * np.abs(A.diagonal()) >= np.sum(np.abs(A), axis=1))
+
+
+def seidel(A, b, err):
+    N = A.shape[0]
+    x = np.zeros((N, 1))
+    C = np.zeros((N, N))
+    for i in range(N):
+        for j in range(N):
+            if i != j:
+                C[i, j] = -A[i, j] / A[i, i]
+    #print("\nC\n",C)
+    d = np.zeros((N, 1))
+    for i in range(N):
+        d[i, 0] = b[i, 0] / A[i, i]
+
+    norm_c = norm(C)
+    #норма верхнего треугольника
+    err *= (1 - norm_c) / norm_c if norm_c < 1 else 1e-2
+    x_tmp = np.zeros((N, 1))
+    for iter in range(100000):
+        for i in range(N):
+            #x[i, 0] = 0
+            x[i, 0] = np.dot(C[i], x) + d[i, 0]
+            #for j in range(i):
+            #    x[i, 0] += C[i, j] * x[j, 0]
+            #for j in range(i, N):
+            #    x[i, 0] += C[i, j] * x_tmp[j, 0]
+            #x[i, 0] += d[i, 0]
+
+        # print("\nx\n", x - x_tmp)
+        if norm(x - x_tmp) <= err:
+            print(norm(np.linalg.solve(A, b) - x))
+            return iter + 1
+        x_tmp = x.copy()
+
+
+    return -1
+
+
+def jacobi(A, b, err):
+    N = A.shape[0]
+    C = np.zeros((N, N))
+    for i in range(N):
+        for j in range(N):
+            if i != j:
+                C[i, j] = -A[i, j] / A[i , i]
+    d = np.zeros((N, 1))
+    for i in range(N):
+        d[i, 0] = b[i, 0] / A[i, i]
+
+    q = norm(C)
+    # print(C)
+        
+    # print(np.log(abs(1-q)))
+    # print(q,err,norm(d),abs((1 - q)) / err * norm(d),sep=' ')
+    apr = np.log((1 - q) * err / norm(d)) / np.log(q)
+    # apr = np.log2(err-(1-q)/norm(d))/np.log2(q)
+    # apr = (np.log(err)-np.log(norm(d))+np.log(abs(1 - q))) / np.log(q)
+
+    print("\nq: ", q)
+
+    print("Apr iter:", apr)
+    if(q>1):
+        err*=0.01
+    else:
+        err *= (1 - q) / q
+    #print("Matrix C:\n", C)
+    #print("Matrix d:\n", d, "\n")
+    #print("Norm of C:", q, "\n")
+
+    x_tmp = np.zeros((N, 1))
+    for iter in range(10000):
+        x = np.dot(C, x_tmp) + d
+        if norm(x - x_tmp) <= err:
+            print(norm(np.linalg.solve(A, b) - x))
+            return iter + 1
+        x_tmp = x.copy()
+
+
+  #  print("\nx\n", x)
+    return -1
+
+
+N = 100
+MIN = -10
+MAX = 10
+err = 1e-10
+
+# define A matrix
+A_int = np.random.randint(MIN, MAX+1, size=(N, N))
+#print(A_int)
+Diag = np.random.randint(MIN + N * MAX, (N+1) * MAX, size = (1, N))
+#print("Diag\n", Diag)
+A_diag = np.diag(Diag[0])
+A_int += A_diag
+
+#A_int = (A_int + A_int.T) / 2
+#A_int = np.dot(A_int, A_int.T)
+A = A_int.astype(np.float64)
+
+
+#A = np.array([[3., 1., 1.], [1., 5., 1.], [1., 1., 7.]])
+
+#print("A\n", A)
+
+# define b matrix
+b_int = np.random.randint(MIN, MAX+1, size=(N, 1))
+b = b_int.astype(np.float64)
+#b = np.dot(A, b)
+#b = np.array([[5.], [7.], [9.]])
+
+#print("b\n", b)
+
+print('Jacobi solved system with diagonal dominance matrix in ', jacobi(A, b, err), ' iterations\n\n')
+print('Seidel solved system with diagonal dominance matrix in ', seidel(A, b, err), ' iterations\n\n')
+
+#A = np.dot(A, A.T)
+
+# Fill the diagonal of A with random values
+#A[np.diag_indices(N)] = 0.01 + np.random.rand(N) * 0.09
+#print("JACOBI, A\n", A)
+#print('Jacobi solved system with diagonal dominance matrix in ', jacobi(A, b, err), ' iterations\n\n')
+#print('Seidel solved system with diagonal dominance matrix in ', seidel(A,b, err), ' iterations\n\n')
